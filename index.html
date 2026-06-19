@@ -53,9 +53,10 @@
         #hero-section {
             position: relative;
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             overflow: hidden;
-            display: none; /* سيتم إظهاره بعد الضغط على البداية */
+            display: none;
+            padding: 20px 0;
         }
 
         /* شريط الصور المتحرك */
@@ -64,13 +65,13 @@
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
-            opacity: 0.3; /* نسبة الشفافية المطلوبة */
+            opacity: 0.3;
         }
 
         .marquee-row {
             display: flex;
             width: 200%;
-            height: 33.33vh; /* 3 صفوف لتغطية الشاشة */
+            height: 33.33vh;
             animation: scroll-left 60s linear infinite;
         }
 
@@ -98,9 +99,8 @@
 
         /* المربع الزجاجي (Glassmorphism) */
         .glass-card {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            position: relative;
+            margin: 5vh auto;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
@@ -120,6 +120,31 @@
             color: #ffcccb;
         }
 
+        /* سلايدر الشخصيات (يظهر كصورة واحدة تتبدل) */
+        #character-slideshow {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 20px auto;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 204, 203, 0.6);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+
+        #character-slideshow img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #character-slideshow img.active {
+            opacity: 1;
+        }
+
         .glass-card p {
             font-size: 1.3rem;
             line-height: 1.8;
@@ -127,9 +152,18 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
+        /* الأزرار */
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
         .scroll-btn {
             padding: 12px 30px;
             font-size: 1.2rem;
+            width: 250px;
             background: #fff;
             color: #333;
             border: none;
@@ -145,18 +179,35 @@
             transform: translateY(-5px);
         }
 
-        /* === قسم المعرض === */
-        #gallery-section {
+        .scroll-btn.secondary {
+            background: transparent;
+            color: #ffcccb;
+            border: 2px solid #ffcccb;
+        }
+
+        .scroll-btn.secondary:hover {
+            background: #ffcccb;
+            color: #111;
+        }
+
+        /* === قسم المعرض وقسم الشخصيات === */
+        .section-container {
             padding: 50px 20px;
             background: #111;
             min-height: 100vh;
         }
 
-        .gallery-title {
+        .section-title {
             text-align: center;
             font-size: 2.5rem;
             margin-bottom: 40px;
             color: #ffcccb;
+            border-bottom: 2px dashed rgba(255, 204, 203, 0.3);
+            padding-bottom: 15px;
+            display: inline-block;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         /* شبكة 3 في 3 */
@@ -177,6 +228,7 @@
             transform: translateY(50px);
             transition: all 0.6s ease-out;
             cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .grid-item.visible {
@@ -198,99 +250,131 @@
         /* === التجاوب مع الموبايل === */
         @media (max-width: 768px) {
             .grid-container {
-                grid-template-columns: repeat(2, 1fr); /* 2 في الموبايل عشان الرؤية */
+                grid-template-columns: repeat(2, 1fr);
             }
             .glass-card h1 { font-size: 2rem; }
             .glass-card p { font-size: 1.1rem; }
+            #character-slideshow { width: 180px; height: 180px; }
         }
         @media (max-width: 480px) {
             .grid-container {
-                grid-template-columns: 1fr; /* 1 في الشاشات الصغيرة جداً */
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ملف الصوت -->
     <audio id="bg-audio" loop>
         <source src="s.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- شاشة البداية -->
     <div id="start-screen">
         <button id="start-btn">ابدأ الرحلة ❤️</button>
     </div>
 
-    <!-- القسم الرئيسي -->
     <div id="hero-section">
-        <!-- الخلفية المتحركة (سيتم ملؤها بـ JS) -->
         <div class="marquee-container" id="marquee-container">
             <div class="marquee-row" id="row1"></div>
             <div class="marquee-row" id="row2"></div>
             <div class="marquee-row" id="row3"></div>
         </div>
 
-        <!-- الكارت الزجاجي -->
         <div class="glass-card">
             <h1>عيلتنا الحلوة</h1>
+            
+            <div id="character-slideshow"></div>
+
             <p>
                 "إحنا بدأنا الحكاية أغراب.. والصدفة جمعتنا لحد ما بقينا عيلة واحدة وعشرة عمر.<br>
                 عشنا مع بعض لحظات حلوة، ضحكنا وساندنا بعض في كل خطوة.<br>
                 يا رب تفضل قلوبنا متجمعة على الخير ومحدش فينا ينسى التاني أبداً،<br>
                 وربنا يوفقنا كلنا في اللي جاي ويكتبلنا السعادة والنجاح."
             </p>
-            <button class="scroll-btn" onclick="scrollToGallery()">شاهد المعرض كاملاً</button>
+            
+            <div class="buttons-container">
+                <button class="scroll-btn" onclick="scrollToSection('gallery-section')">شاهد المعرض كاملاً</button>
+                <button class="scroll-btn secondary" onclick="scrollToSection('characters-section')">الشخصيات</button>
+            </div>
         </div>
     </div>
 
-    <!-- قسم المعرض -->
-    <div id="gallery-section">
-        <h2 class="gallery-title">أجمل ذكرياتنا</h2>
-        <!-- سيتم ملء هذا القسم بـ JS ليكون 3 أعمدة -->
+    <div id="gallery-section" class="section-container">
+        <h2 class="section-title">أجمل ذكرياتنا</h2>
         <div class="grid-container" id="gallery-grid"></div>
     </div>
 
+    <div id="characters-section" class="section-container">
+        <h2 class="section-title">أبطال الحكاية</h2>
+        <div class="grid-container" id="characters-grid"></div>
+    </div>
+
     <script>
-        // إعداد أرقام الملفات بناءً على طلبك (الصور من 1 لـ 163، الفيديوهات من 1 لـ 16)
-        const totalImages = 193;
-        const totalVideos = 16;
+        // إعدادات المعرض
+        const totalGalleryImages = 193; // تم التعديل لـ 193
+        const totalGalleryVideos = 16;
         
-        let mediaArray = [];
+        // إعدادات الشخصيات
+        const totalCharacters = 29;
 
-        // تجميع كل أسماء الملفات في مصفوفة واحدة
-        for(let i = 1; i <= totalImages; i++) {
-            mediaArray.push({ type: 'image', src: `mid (${i}).jpeg` });
+        // --- 1. تجهيز مصفوفة المعرض (الخلفية وقسم المعرض) ---
+        let galleryArray = [];
+        for(let i = 1; i <= totalGalleryImages; i++) {
+            galleryArray.push({ type: 'image', src: `mid (${i}).jpeg` });
         }
-        for(let i = 1; i <= totalVideos; i++) {
-            mediaArray.push({ type: 'video', src: `mid (${i}).mp4` });
+        for(let i = 1; i <= totalGalleryVideos; i++) {
+            galleryArray.push({ type: 'video', src: `mid (${i}).mp4` });
         }
+        galleryArray = galleryArray.sort(() => Math.random() - 0.5);
 
-        // خلط المصفوفة عشوائياً عشان الصور والفيديوهات تتداخل بشكل جميل
-        mediaArray = mediaArray.sort(() => Math.random() - 0.5);
-
-        // --- 1. ملء شريط الخلفية المتحرك ---
+        // ملء شريط الخلفية المتحرك بالذكريات
         const rows = [document.getElementById('row1'), document.getElementById('row2'), document.getElementById('row3')];
-        
-        // نكرر الميديا في شريط الخلفية عشان الـ infinite scroll يشتغل بشكل ناعم
-        mediaArray.slice(0, 60).forEach((media, index) => {
-            let el = createMediaElement(media, true); // true = للخلفية
-            rows[index % 3].appendChild(el);
-            // تكرار العنصر مرة كمان عشان حركة الشريط متقطعش
-            let elClone = createMediaElement(media, true);
-            rows[index % 3].appendChild(elClone);
+        galleryArray.slice(0, 60).forEach((media, index) => {
+            rows[index % 3].appendChild(createMediaElement(media, true));
+            rows[index % 3].appendChild(createMediaElement(media, true)); // تكرار لتجنب الفراغ
         });
 
-        // --- 2. ملء شبكة المعرض (3 في 3) ---
+        // ملء شبكة المعرض الأساسية
         const galleryGrid = document.getElementById('gallery-grid');
-        mediaArray.forEach(media => {
+        galleryArray.forEach(media => {
             let container = document.createElement('div');
             container.className = 'grid-item';
-            container.appendChild(createMediaElement(media, false)); // false = للمعرض
+            container.appendChild(createMediaElement(media, false));
             galleryGrid.appendChild(container);
         });
 
-        // دالة مساعدة لإنشاء عناصر الصور والفيديو
+        // --- 2. تجهيز قسم وسلايدر الشخصيات (ملفات بصيغة .png) ---
+        const charSlideshow = document.getElementById('character-slideshow');
+        const charactersGrid = document.getElementById('characters-grid');
+
+        for(let i = 1; i <= totalCharacters; i++) {
+            let src = `1-1 (${i}).png`;
+
+            // أ- إضافة الصورة لسلايدر الكارت (لتظهر كأنها صورة واحدة بتتبدل)
+            let slideImg = document.createElement('img');
+            slideImg.src = src;
+            if(i === 1) slideImg.classList.add('active'); // أول صورة تظهر
+            charSlideshow.appendChild(slideImg);
+
+            // ب- إضافة الصورة لشبكة الشخصيات تحت
+            let gridItem = document.createElement('div');
+            gridItem.className = 'grid-item';
+            let gridImg = document.createElement('img');
+            gridImg.src = src;
+            gridItem.appendChild(gridImg);
+            charactersGrid.appendChild(gridItem);
+        }
+
+        // تشغيل سلايدر الشخصيات (تبديل الصور كل 2.5 ثانية)
+        let slides = charSlideshow.querySelectorAll('img');
+        let currentSlide = 0;
+        setInterval(() => {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 2500);
+
+        // --- 3. الدوال المساعدة والحركات ---
         function createMediaElement(media, isBackground) {
             let el;
             if (media.type === 'image') {
@@ -300,36 +384,31 @@
             } else {
                 el = document.createElement('video');
                 el.src = media.src;
-                el.muted = true; // الفيديوهات لازم تكون Muted عشان تشتغل تلقائي وبدون ازعاج
+                el.muted = true;
                 el.loop = true;
                 el.autoplay = true;
-                if(isBackground) el.controls = false;
-                else el.controls = true; // إضافة أزرار التحكم في المعرض فقط
+                if(!isBackground) el.controls = true;
             }
             return el;
         }
 
-        // --- 3. تشغيل الصوت والبدء ---
-        const startBtn = document.getElementById('start-btn');
-        const startScreen = document.getElementById('start-screen');
-        const heroSection = document.getElementById('hero-section');
-        const bgAudio = document.getElementById('bg-audio');
-
-        startBtn.addEventListener('click', () => {
-            bgAudio.play();
+        // تشغيل الصوت والبدء
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('bg-audio').play();
+            const startScreen = document.getElementById('start-screen');
             startScreen.style.opacity = '0';
             setTimeout(() => {
                 startScreen.style.display = 'none';
-                heroSection.style.display = 'block';
+                document.getElementById('hero-section').style.display = 'block';
             }, 1000);
         });
 
-        // --- 4. النزول السلس للمعرض ---
-        function scrollToGallery() {
-            document.getElementById('gallery-section').scrollIntoView({ behavior: 'smooth' });
+        // التمرير السلس للأقسام
+        function scrollToSection(sectionId) {
+            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
         }
 
-        // --- 5. حركة ظهور العناصر (Animation) عند التمرير للمعرض ---
+        // حركة ظهور الصور (Fade-in-up) عند التمرير
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -338,9 +417,12 @@
             });
         }, { threshold: 0.1 });
 
-        document.querySelectorAll('.grid-item').forEach(item => {
-            observer.observe(item);
-        });
+        // مراقبة عناصر المعرض والشخصيات
+        setTimeout(() => {
+            document.querySelectorAll('.grid-item').forEach(item => {
+                observer.observe(item);
+            });
+        }, 500);
     </script>
 </body>
 </html>
